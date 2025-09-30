@@ -7,6 +7,24 @@ import os
 
 st.set_page_config(layout="wide")
 
+# --- MAPBOX TOKEN SETUP ---
+# Prefer environment variable; fallback to Streamlit secrets if available.
+MAPBOX_TOKEN = os.environ.get("MAPBOX_API_KEY")
+try:
+    if not MAPBOX_TOKEN and hasattr(st, "secrets") and "MAPBOX_API_KEY" in st.secrets:
+        MAPBOX_TOKEN = st.secrets["MAPBOX_API_KEY"]
+except Exception:
+    # st.secrets may raise in some local contexts; ignore and continue
+    pass
+
+if MAPBOX_TOKEN:
+    try:
+        pdk.settings.mapbox_api_key = MAPBOX_TOKEN
+    except Exception:
+        pass
+else:
+    st.warning("Mapbox token not found. Set MAPBOX_API_KEY in your environment or Streamlit secrets for proper map rendering.")
+
 # --- DATA & MODEL LOADING ---
 @st.cache_data
 def load_data():
