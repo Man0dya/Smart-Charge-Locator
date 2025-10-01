@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 import pydeck as pdk
 import os
+from sklearn.metrics import mean_absolute_error, r2_score
 
 st.set_page_config(layout="wide")
 
@@ -41,17 +42,52 @@ def load_model(model_filename):
 
 data = load_data()
 
-# --- SIDEBAR CONTROLS ---
+# --- MODEL SELECTION (AUTO: BEST ONLY) ---
 st.sidebar.header("Controls")
 model_files = [f for f in os.listdir('models') if f.endswith('.pkl')]
 if not model_files:
     st.error("No model files found in '/models'. Please run training notebooks first.")
     st.stop()
 
-selected_model_file = st.sidebar.selectbox("Choose a Prediction Model", model_files)
-model = load_model(selected_model_file)
+def evaluate_model(_model, _data: pd.DataFrame):
+    # Use the latest historical year as a hold-out test set
+    latest_year = int(_data['Model Year'].max())
+    test_df = _data[_data['Model Year'] == latest_year]
+    if test_df.empty:
+        # Fallback to entire dataset if latest year slice is empty
+        test_df = _data
+    X_test = test_df[['Postal Code', 'Model Year', 'Prev_Year_EV_Count', 'Year_Delta']]
+    y_test = test_df['EV_Count']
+    try:
+        y_pred = _model.predict(X_test)
+        mae = float(mean_absolute_error(y_test, y_pred))
+        r2 = float(r2_score(y_test, y_pred))
+        return {"mae": mae, "r2": r2}
+    except Exception as e:
+        return {"mae": float('inf'), "r2": float('-inf'), "error": str(e)}
+
+evaluations = []
+for mf in model_files:
+    try:
+        m = load_model(mf)
+        metrics = evaluate_model(m, data)
+        evaluations.append({"file": mf, "metrics": metrics, "model": m})
+    except Exception as e:
+        evaluations.append({"file": mf, "metrics": {"mae": float('inf'), "r2": float('-inf'), "error": str(e)}, "model": None})
+
+# Pick best by highest R2, tie-break by lowest MAE
+evaluations = [e for e in evaluations if e["model"] is not None]
+if not evaluations:
+    st.error("All models failed to load or evaluate. Please retrain models.")
+    st.stop()
+
+best = sorted(evaluations, key=lambda x: (-x["metrics"]["r2"], x["metrics"]["mae"]))[0]
+selected_model_file = best["file"]
+model = best["model"]
 latest_year_in_data = data['Model Year'].max()
-prediction_year = st.sidebar.slider("Select Year for Prediction", latest_year_in_data, 2030, 2025)
+prediction_year = st.sidebar.slider("Select Year for Prediction", int(latest_year_in_data), 2030, 2025)
+st.sidebar.success(f"Using best model: {selected_model_file}")
+st.sidebar.caption(f"R²: {best['metrics']['r2']:.3f} | MAE: {best['metrics']['mae']:.1f} (evaluated on year {int(latest_year_in_data)})")
 
 # --- PREDICTION FUNCTION ---
 def predict_future(start_year, end_year):
@@ -75,7 +111,7 @@ def predict_future(start_year, end_year):
 # --- MAIN PAGE LAYOUT ---
 st.title("⚡️ Electric Vehicle Hotspot Predictor")
 model_name_display = selected_model_file.replace('_', ' ').replace('.pkl', '').title()
-st.markdown(f"Displaying predictions using the **{model_name_display}** model.")
+st.markdown(f"Using the automatically selected best model: **{model_name_display}**.")
 
 predicted_data = predict_future(latest_year_in_data, prediction_year)
 display_data = predicted_data[predicted_data['Model Year'] == prediction_year].dropna(subset=['lat', 'lon'])
