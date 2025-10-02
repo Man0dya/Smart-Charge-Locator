@@ -4,6 +4,9 @@ scikit-learn
 matplotlib
 seaborn
 jupyterlab
-streamlit
-pydeck
+joblib
+geopandas
 xgboost
+streamlit
+openpyxl
+

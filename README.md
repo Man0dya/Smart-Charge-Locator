@@ -1,134 +1,47 @@
-Smart-Charge-Locator
-====================
+Smart-Charge-Locator (Remade)
+=============================
 
-Predict EV adoption hotspots in Washington State and visualize them on an interactive Streamlit dashboard.
+Goal
+----
+Identify the top 10 Washington State cities with the highest density of EV owners and support placement of new charging stations. Deliver a notebook-driven workflow that preprocesses data, clusters cities, trains predictive models, and reports results.
 
-This project includes:
-- Data prep and modeling notebooks (cleaning, EDA, feature engineering, model training)
-- A Streamlit app at `app/dashboard.py` that loads a processed dataset, a ZIP/postal-code coordinate file, and one or more trained model pipelines (`.pkl`).
+Workflow
+--------
+1) Preprocessing (01_Preprocessing.ipynb)
+   - Ingest `data/raw/Electric_Vehicle_Population_Data.xlsx`
+   - Build city-year dataset and save:
+     - `data/processed/city_ev_agg.csv`
+     - `data/processed/model_ready_city_ev.csv`
+2) Clustering (02_Clustering.ipynb)
+   - Cluster cities by EV density proxy using KMeans/DBSCAN
+   - Save `data/processed/city_clustering.csv`, report silhouette score
+3) Model Training (03_Model_Training.ipynb)
+   - Train Linear/Ridge/RandomForest regressors on city-year features
+   - Save `models/best_model.pkl` and `data/processed/model_eval.csv`
+4) Prediction & Report (04_Prediction_Report.ipynb)
+   - Load best model, predict for a target year
+   - Show accuracy metrics and top-10 city rankings with plots
 
-Requirements
-------------
-- Windows 10/11
-- Python 3.9–3.11 (3.10 recommended)
-
-All Python dependencies are listed in `requirements.txt` (pandas, numpy, scikit-learn, matplotlib, seaborn, jupyterlab, streamlit, pydeck, xgboost).
-
-Quickstart (Windows PowerShell)
--------------------------------
-1) Clone and open the project
-
-2) Create and activate a virtual environment
-
+Setup (Windows PowerShell)
+--------------------------
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-3) Install dependencies
-
-```powershell
 pip install -r requirements.txt
+jupyter lab
 ```
 
-4) Ensure folders exist (first-time setup)
+Data
+----
+- Place the raw Excel at `data/raw/Electric_Vehicle_Population_Data.xlsx`.
+- Outputs are written to `data/processed/` and `models/`.
 
-```powershell
-New-Item -ItemType Directory -Force .\data\processed | Out-Null
-New-Item -ItemType Directory -Force .\models | Out-Null
-```
+Notes
+-----
+- EV density proxy is computed as EV registrations per unique ZIP within a city (fallback when population/area data are unavailable). Replace with census population or city area when available to compute true density.
+- Clustering quality is validated with silhouette score; the workflow chooses the best among tried configurations.
 
-5) Prepare data (from notebooks)
+License
+-------
+For internal project use.
 
-Run the notebooks in `notebooks/` to generate the files the app expects:
-- Open JupyterLab:
-
-	```powershell
-	jupyter lab
-	```
-
-- Execute in order:
-	- `01_Data_Loading_and_Cleaning.ipynb`
-	- `02_Exploratory_Data_Analysis.ipynb` (optional for exploration)
-	- `03_Feature_Engineering.ipynb`
-
-Output files expected by the app:
-- `data/processed/model_ready_ev_data.csv`
-- `data/Washington_State_Coordinates.csv`
-
-Notes:
-- `model_ready_ev_data.csv` should contain at minimum: `Postal Code`, `Model Year`, `EV_Count` and any features your model needs.
-- `Washington_State_Coordinates.csv` should contain columns: `Postal Code`, `lat`, `lon`.
-
-6) Train one or more models (from notebooks)
-
-Run any notebooks in `notebooks/model_training/` (e.g., Linear/Ridge/RandomForest/XGBoost) and save each trained pipeline as a `.pkl` file into the `models/` folder. The app will auto-discover any `*.pkl` files there.
-
-Suggested filenames (examples):
-- `models/linear_regression.pkl`
-- `models/ridge_regression.pkl`
-- `models/random_forest.pkl`
-- `models/xgboost.pkl`
-
-Model input contract (used by the app during forecasting):
-- The app constructs features with columns: `Postal Code`, `Model Year`, `Prev_Year_EV_Count`, `Year_Delta` and calls `model.predict(features)`, expecting a numeric EV count per row.
-- Save a scikit-learn compatible estimator or pipeline that implements `.predict(X)` with the above columns.
-
-7) Run the Streamlit app
-
-```powershell
-streamlit run app/dashboard.py
-```
-
-Then open the URL shown in the terminal (typically http://localhost:8501).
-
-Troubleshooting
----------------
-- Error: "No model files found in '/models'"
-	- Ensure you trained a model and saved at least one `.pkl` into the `models/` folder.
-
-- FileNotFoundError for `data/processed/model_ready_ev_data.csv` or `data/Washington_State_Coordinates.csv`
-	- Re-run the data prep notebooks, or verify the files’ locations and column names match those listed above.
-
-- The map renders blank
-	- PyDeck can use Mapbox. If needed, set a Mapbox token:
-		```powershell
-		$env:MAPBOX_API_KEY = "<your_mapbox_token>"
-		streamlit run app/dashboard.py
-		```
-
-- Path issues on Windows
-	- Always run commands from the project root (where `requirements.txt` lives) after activating the venv.
-
-Project structure (key paths)
------------------------------
-```
-Smart-Charge-Locator/
-	app/
-		dashboard.py               # Streamlit app entrypoint
-	data/
-		raw/
-			Electric_Vehicle_Population_Data.xlsx
-		processed/
-			model_ready_ev_data.csv  # generated by notebooks
-		Washington_State_Coordinates.csv  # postal code -> lat/lon
-	models/
-		*.pkl                      # trained model pipelines (auto-discovered)
-	notebooks/
-		01_Data_Loading_and_Cleaning.ipynb
-		02_Exploratory_Data_Analysis.ipynb
-		03_Feature_Engineering.ipynb
-		model_training/
-			4.1_Linear_Regression.ipynb
-			4.2_Ridge_Regression.ipynb
-			4.3_Random_Forest.ipynb
-			4.4_XGBoost.ipynb
-	requirements.txt
-	README.md
-```
-
-Notes for contributors
-----------------------
-- Prefer adding version pins when introducing new dependencies.
-- Keep the app’s feature column names in sync with what training notebooks produce.
-- If you change expected file paths, update `app/dashboard.py` and this README.
