@@ -1,0 +1,16 @@
+{
+  "features": [
+    "ev_count",
+    "bev_count",
+    "phev_count",
+    "bev_ratio",
+    "phev_ratio"
+  ],
+  "numeric_only": [
+    "ev_count",
+    "bev_count",
+    "phev_count",
+    "bev_ratio",
+    "phev_ratio"
+  ]
+}
