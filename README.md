@@ -1,97 +1,226 @@
+# 🔋 Smart Charge Locator
 
-# EV Charging Location Optimizer
+A machine learning project that predicts optimal locations for electric vehicle (EV) charging stations based on EV population data and geographic factors.
 
-This project helps electric vehicle (EV) charging station manufacturers identify optimal locations for new charging stations, using real-world EV population data and machine learning. It provides a user-friendly frontend for exploring recommendations and planning deployments.
+## 📋 Project Overview
 
-## Features
+This project analyzes Electric Vehicle Population Data to identify the most suitable cities for installing new charging stations. Users can input a county name to get predictions for cities within that county, helping infrastructure planners make data-driven decisions.
 
-- **Data Preprocessing & Analysis:** Cleans, aggregates, and profiles EV registration data.
-- **Demand Modeling:** Predicts required chargers and identifies high-demand areas.
-- **Optimal Placement:** Uses clustering and optimization to suggest station sites.
-- **Streamlit App:** Interactive dashboard for manufacturers to view recommendations and download results.
-- **Reusable Codebase:** Modular Python scripts for data, modeling, and utility functions.
-- **CLI Tool:** Command-line interface for running key pipeline steps.
+## 🎯 Key Features
 
-## Project Structure
+- **Data Analysis**: Comprehensive analysis of EV distribution patterns
+- **Machine Learning Models**: Multiple ML models (Linear Regression, Ridge, Random Forest, XGBoost)
+- **Interactive Web App**: Streamlit-based interface for easy interaction
+- **Geographic Visualization**: Interactive maps showing EV distribution and charging station suitability
+- **County-based Predictions**: Input county name to get city-level predictions
+
+## 🏗️ Project Structure
 
 ```
-.
-├── app/                # Streamlit frontend
-│   ├── app.py          # Main app code
-│   └── utils.py        # App utilities
-├── artifacts/          # Exported CSVs, models, and maps for the app
-│   ├── stations.csv
-│   ├── aggregated_demand.csv
-│   └── ... (imputers, encoders, maps)
-├── data/
-│   ├── processed/
-│   │   └── raw_snapshot.parquet
-│   └── interim/        # (empty, for intermediate files)
-├── notebooks/
-│   ├── 01_data_preprocessing.ipynb  # Main workflow notebook
-│   ├── artifacts/      # Notebook-generated artifacts
-│   ├── models/         # Trained model files
-│   └── data/           # Notebook-generated data
-├── src/
-│   ├── cli.py          # Command-line pipeline runner
-│   ├── features/       # Feature engineering
-│   ├── models/         # Model training/inference
-│   └── utils/          # I/O and helpers
-├── requirements.txt    # Python dependencies
-├── README.md           # Project documentation
-└── tasks.json          # Project milestone tracker
+SMART_CHARGE_LOCATOR/
+├── .venv/                          # Virtual environment
+├── app/                            # Streamlit web application
+│   └── app.py                     # Main application file
+├── data/                          # Data directory
+│   ├── processed/                 # Processed and cleaned data
+│   ├── raw/                       # Original dataset
+│   └── Electric_Vehicle_Population_Data.csv
+├── models/                        # Trained ML models
+│   ├── linear_regression.pkl
+│   ├── ridge_regression.pkl
+│   ├── random_forest.pkl
+│   └── xgboost.pkl
+├── notebooks/                     # Jupyter notebooks
+│   ├── model_training/           # Model training notebooks
+│   │   ├── 4.1_Linear_Regression.ipynb
+│   │   ├── 4.2_Ridge_Regression.ipynb
+│   │   ├── 4.3_Random_Forest.ipynb
+│   │   └── 4.4_XGBoost.ipynb
+│   ├── 01_Data_Loading_and_Cleaning.ipynb
+│   ├── 02_Exploratory_Data_Analysis.ipynb
+│   └── 03_Feature_Engineering.ipynb
+├── README.md                      # Project documentation
+└── requirements.txt               # Python dependencies
 ```
 
-## Key Data & Artifacts
+## 🚀 Getting Started
 
-- **Electric_Vehicle_Population_Data.csv:** Raw input data (not included, place in project root).
-- **data/processed/raw_snapshot.parquet:** Fast, columnar snapshot of raw data for analysis.
-- **notebooks/data/processed/agg_city_county.parquet:** Aggregated demand by city/county.
-- **notebooks/data/processed/agg_targets.parquet:** Demand targets (required chargers, high demand flags).
-- **artifacts/stations.csv:** Recommended station locations for manufacturers.
-- **artifacts/aggregated_demand.csv:** Aggregated demand for app and download.
-- **artifacts/stations_map.html:** Interactive map of suggested sites.
+### Prerequisites
 
-## How to Run
+- Python 3.8 or higher
+- pip (Python package installer)
 
-1. **Setup Environment**
-	 - Create a Python 3.10+ virtual environment:
-		 ```
-		 python -m venv .venv
-		 .\.venv\Scripts\activate
-		 ```
-	 - Install dependencies:
-		 ```
-		 pip install -r requirements.txt
-		 ```
+### Installation
 
-2. **Prepare Data**
-	 - Place `Electric_Vehicle_Population_Data.csv` in the project root.
-	 - Run the notebook `notebooks/01_data_preprocessing.ipynb` step by step to generate processed data and artifacts.
+1. **Clone or download the project**
+   ```bash
+   # If using git
+   git clone <repository-url>
+   cd SMART_CHARGE_LOCATOR
+   
+   # Or simply navigate to the project directory
+   cd SMART_CHARGE_LOCATOR
+   ```
 
-3. **Launch the App**
-	 - After running the notebook, start the Streamlit app:
-		 ```
-		 streamlit run app/app.py
-		 ```
-	 - The app will show recommended cities and station sites, with options to filter, view maps, and download results.
+2. **Create and activate virtual environment**
+   ```bash
+   # Create virtual environment
+   python -m venv .venv
+   
+   # Activate virtual environment
+   # On Windows:
+   .venv\Scripts\activate
+   
+   # On macOS/Linux:
+   source .venv/bin/activate
+   ```
 
-4. **Command-Line Usage**
-	 - Run pipeline steps via CLI:
-		 ```
-		 python src/cli.py --step prep|train|place|export
-		 ```
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## For Developers
+### Running the Project
 
-- All code is modular and reusable. See `src/` for feature engineering, modeling, and utility functions.
-- Add unit tests in the `tests/` folder as needed.
-- Extend the notebook for new data sources or modeling approaches.
+1. **Execute the data processing notebooks** (in order):
+   ```bash
+   # Start Jupyter Notebook
+   jupyter notebook
+   
+   # Run notebooks in this order:
+   # 1. 01_Data_Loading_and_Cleaning.ipynb
+   # 2. 02_Exploratory_Data_Analysis.ipynb
+   # 3. 03_Feature_Engineering.ipynb
+   # 4. notebooks/model_training/4.1_Linear_Regression.ipynb
+   # 5. notebooks/model_training/4.2_Ridge_Regression.ipynb
+   # 6. notebooks/model_training/4.3_Random_Forest.ipynb
+   # 7. notebooks/model_training/4.4_XGBoost.ipynb
+   ```
 
-## For Manufacturers
+2. **Launch the Streamlit web application**
+   ```bash
+   streamlit run app/app.py
+   ```
 
-- Use the Streamlit app to view and download recommended locations for new EV charging stations.
-- All technical terms are simplified for clarity.
-- Download CSVs for planning and deployment.
+3. **Open your browser** and navigate to `http://localhost:8501`
 
+## 📊 Data Processing Pipeline
 
+### 1. Data Loading and Cleaning (`01_Data_Loading_and_Cleaning.ipynb`)
+- Loads the Electric Vehicle Population Data
+- Handles missing values and data inconsistencies
+- Creates additional features like vehicle age
+- Extracts geographic coordinates
+- Saves cleaned data for further processing
+
+### 2. Exploratory Data Analysis (`02_Exploratory_Data_Analysis.ipynb`)
+- Analyzes EV distribution by county and city
+- Creates charging station suitability scores
+- Generates interactive maps
+- Identifies patterns in EV adoption
+- Saves analysis results
+
+### 3. Feature Engineering (`03_Feature_Engineering.ipynb`)
+- Creates city-level aggregated features
+- Engineers new features for machine learning
+- Handles categorical variables
+- Prepares training and test datasets
+- Saves processed data for model training
+
+### 4. Model Training (`notebooks/model_training/`)
+- **Linear Regression**: Baseline model with interpretable coefficients
+- **Ridge Regression**: Regularized linear model to prevent overfitting
+- **Random Forest**: Ensemble method capturing non-linear relationships
+- **XGBoost**: Gradient boosting for high performance predictions
+
+## 🎮 Using the Web Application
+
+1. **Select a Model**: Choose from available trained models
+2. **Choose a County**: Select a county to analyze
+3. **View the Map**: Interactive map showing EV distribution and charging scores
+4. **Check Rankings**: See top cities by charging station suitability
+5. **Make Predictions**: Select a specific city to get charging score predictions
+6. **View Statistics**: County-level statistics and model performance metrics
+
+## 📈 Model Performance
+
+The project includes multiple machine learning models with different strengths:
+
+- **Linear Regression**: Fast, interpretable, good baseline
+- **Ridge Regression**: Regularized, prevents overfitting
+- **Random Forest**: Handles non-linear relationships, feature importance
+- **XGBoost**: High performance, gradient boosting
+
+## 🔧 Key Features of the Web App
+
+- **Interactive Maps**: Folium-based maps with EV distribution
+- **Real-time Predictions**: Get charging scores for any city
+- **Model Comparison**: Switch between different ML models
+- **County Filtering**: Focus on specific geographic areas
+- **Performance Metrics**: View model accuracy and performance
+- **Responsive Design**: Works on desktop and mobile devices
+
+## 📋 Dataset Information
+
+The project uses the **Electric Vehicle Population Data** which includes:
+- Vehicle information (VIN, make, model, year)
+- Geographic data (county, city, state, coordinates)
+- EV specifications (electric range, MSRP, vehicle type)
+- Registration details and utility information
+
+## 🛠️ Technical Stack
+
+- **Python**: Core programming language
+- **Pandas**: Data manipulation and analysis
+- **NumPy**: Numerical computing
+- **Scikit-learn**: Machine learning algorithms
+- **XGBoost**: Gradient boosting framework
+- **Streamlit**: Web application framework
+- **Plotly**: Interactive visualizations
+- **Folium**: Interactive maps
+- **Jupyter**: Notebook environment
+
+## 📝 Usage Examples
+
+### For Infrastructure Planners
+1. Select your target county
+2. View the interactive map to see current EV distribution
+3. Check the top cities ranking for charging station priority
+4. Use the prediction tool to evaluate specific locations
+5. Make data-driven decisions for charging station placement
+
+### For Researchers
+1. Run the analysis notebooks to understand EV adoption patterns
+2. Experiment with different feature engineering approaches
+3. Compare model performance across different algorithms
+4. Analyze feature importance to understand key factors
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is for educational purposes as part of the FDM module mini project.
+
+## 🙏 Acknowledgments
+
+- Electric Vehicle Population Data source
+- FDM module instructors
+- Open source libraries and frameworks used
+
+## 📞 Support
+
+For questions or issues:
+1. Check the notebook documentation
+2. Review the error messages in the web app
+3. Ensure all dependencies are installed correctly
+4. Verify that all notebooks have been executed in order
+
+---
+
+**Smart Charge Locator** - Making EV infrastructure planning smarter with data science! 🔋⚡
