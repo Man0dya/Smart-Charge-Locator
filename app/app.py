@@ -1,134 +1,398 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from pathlib import Path
+import joblib
+import json
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import folium
+from streamlit_folium import st_folium
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="EV Charger Planner", layout="wide")
+# Page configuration
+st.set_page_config(
+    page_title="Smart Charge Locator",
+    page_icon="🔋",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-st.title("EV Charger Planner")
-
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 3rem;
+        color: #1f77b4;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #1f77b4;
+    }
+    .prediction-card {
+        background-color: #e8f4fd;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        border: 2px solid #1f77b4;
+        text-align: center;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 @st.cache_data
 def load_data():
-    agg_path = Path('data/processed/agg_city_county.parquet')
-    if agg_path.exists():
-        agg = pd.read_parquet(agg_path)
+    """Load processed data and models"""
+    try:
+        # Load city features
+        city_features = pd.read_csv('data/processed/city_features_engineered.csv')
+        
+        # Load models
+        models = {}
+        model_names = ['linear_regression', 'ridge_regression', 'random_forest', 'xgboost']
+        
+        for model_name in model_names:
+            try:
+                models[model_name] = joblib.load(f'models/{model_name}.pkl')
+            except FileNotFoundError:
+                st.warning(f"Model {model_name} not found. Please run the model training notebooks first.")
+        
+        # Load scaler and feature columns
+        scaler = joblib.load('data/processed/scaler.pkl')
+        feature_columns = joblib.load('data/processed/feature_columns.pkl')
+        
+        # Load performance metrics
+        performance_metrics = {}
+        for model_name in model_names:
+            try:
+                with open(f'data/processed/{model_name}_performance_metrics.json', 'r') as f:
+                    performance_metrics[model_name] = json.load(f)
+            except FileNotFoundError:
+                pass
+        
+        return city_features, models, scaler, feature_columns, performance_metrics
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return None, None, None, None, None
+
+def predict_charging_score(city_data, model, scaler, feature_columns):
+    """Predict charging score for a city"""
+    try:
+        # Prepare features
+        features = city_data[feature_columns].values.reshape(1, -1)
+        features_scaled = scaler.transform(features)
+        
+        # Make prediction
+        prediction = model.predict(features_scaled)[0]
+        return prediction
+    except Exception as e:
+        st.error(f"Prediction error: {str(e)}")
+        return None
+
+def create_city_map(city_features, selected_county=None):
+    """Create an interactive map of cities"""
+    # Filter by county if selected
+    if selected_county and selected_county != "All Counties":
+        filtered_data = city_features[city_features['County'] == selected_county]
     else:
-        agg_csv = Path('artifacts/aggregated_demand.csv')
-        agg = pd.read_csv(agg_csv) if agg_csv.exists() else pd.DataFrame()
+        filtered_data = city_features
+    
+    # Create map centered on Washington state
+    m = folium.Map(
+        location=[47.7511, -120.7401],
+        zoom_start=7,
+        tiles='OpenStreetMap'
+    )
+    
+    # Add markers for cities
+    for idx, row in filtered_data.iterrows():
+        if pd.notna(row['Latitude_mean']) and pd.notna(row['Longitude_mean']):
+            # Color based on charging score
+            score = row['Charging_Score']
+            if score > 100:
+                color = 'red'
+            elif score > 50:
+                color = 'orange'
+            else:
+                color = 'green'
+            
+            folium.CircleMarker(
+                location=[row['Latitude_mean'], row['Longitude_mean']],
+                radius=min(row['EV_Count']/20, 15),
+                popup=f"""
+                <b>{row['City']}, {row['County']}</b><br>
+                EVs: {int(row['EV_Count'])}<br>
+                Charging Score: {row['Charging_Score']:.1f}<br>
+                Avg Range: {row['Avg_Range']:.0f} miles
+                """,
+                color=color,
+                fill=True,
+                fillOpacity=0.7
+            ).add_to(m)
+    
+    return m
 
-    stations_csv = Path('artifacts/stations.csv')
-    stations = pd.read_csv(stations_csv) if stations_csv.exists() else pd.DataFrame()
-    return agg, stations
-
-    # ...existing code...
-
-
-
-agg, stations = load_data()
-
-st.subheader("Station Placement Planner")
-st.write("Below are recommended locations for new EV charging stations, based on demand analysis. All technical terms have been simplified for clarity.")
-
-# Section: Top cities to place new chargers
-st.markdown("### Recommended Cities for New Charging Stations")
-if agg.empty:
-    st.warning("No aggregated demand found. Please run the notebook to export artifacts/aggregated_demand.csv or data/processed/agg_city_county.parquet.")
-else:
-    # Determine available columns
-    lat_col = next((c for c in ['centroid_lat', 'latitude', 'lat'] if c in agg.columns), None)
-    lon_col = next((c for c in ['centroid_lon', 'longitude', 'lon'] if c in agg.columns), None)
-
-    with st.container(border=True):
-        # Controls row 1: region filter (county only) and demand toggle
-        c1, c2 = st.columns([2,1])
-        with c1:
-            counties = sorted(agg['county'].dropna().unique().tolist()) if 'county' in agg.columns else []
-            county_sel = st.multiselect("Filter by county", counties, default=[])
-        with c2:
-            only_hd = st.checkbox("High demand only", value=('high_demand' in agg.columns))
-
-        # Controls row 2: ranking and count
-        c3, c4 = st.columns([2,2])
-        with c3:
-            demand_metric = st.selectbox(
-                "Demand metric",
-                options=[opt for opt in ['required_chargers', 'ev_count'] if opt in agg.columns],
-                index=0 if 'required_chargers' in agg.columns else 1,
-                help="Metric representing demand to prioritize."
-            )
-        with c4:
-            max_n = int(min(200, len(agg))) if len(agg) > 0 else 1
-            n_top = st.slider("How many stations to plan?", 1, max_n, min(10, max_n))
-
-        # Build candidate set with filters
-        candidates = agg.copy()
-        if only_hd and 'high_demand' in candidates.columns:
-            candidates = candidates[candidates['high_demand'] == 1]
-        if county_sel and 'county' in candidates.columns:
-            candidates = candidates[candidates['county'].isin(county_sel)]
-
-        # Require coords for mapping; ranking is demand-only
-        if lat_col and lon_col:
-            candidates = candidates.dropna(subset=[lat_col, lon_col]).copy()
-
-        # Rank and select top N (by demand metric only)
-        if demand_metric in candidates.columns:
-            top_df = candidates.sort_values(demand_metric, ascending=False).head(n_top).copy()
+def main():
+    # Header
+    st.markdown('<h1 class="main-header"> Smart Charge Locator</h1>', unsafe_allow_html=True)
+    st.markdown("### Optimal locations for EV charging stations in washington")
+    
+    # Load data
+    city_features, models, scaler, feature_columns, performance_metrics = load_data()
+    
+    if city_features is None:
+        st.error("Failed to load data. Please ensure all data files are available.")
+        return
+    
+    # Sidebar
+    st.sidebar.header("🔧 Configuration")
+    
+    # Use XGBoost model only (remove model selector)
+    selected_model = 'xgboost'
+    if models.get('xgboost') is None:
+        st.error("XGBoost model not available. Please run the model training notebooks first.")
+        return
+    
+    # County selection
+    counties = ["All Counties"] + sorted(city_features['County'].unique().tolist())
+    selected_county = st.sidebar.selectbox("Select County", counties)
+    
+    # Main content
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.header("📍 Interactive Map")
+        
+        # Create and display map
+        city_map = create_city_map(city_features, selected_county)
+        # Basic sanity check
+        if not isinstance(city_map, folium.Map):
+            st.error(f"Expected folium.Map but got {type(city_map)}")
         else:
-            top_df = candidates.head(n_top).copy()
+            # Inspect children for callables (common source of JSON serialization issues)
+            problematic = []
+            try:
+                for k, v in city_map._children.items():
+                    if callable(v):
+                        problematic.append((k, type(v)))
+            except Exception:
+                # If introspection fails, continue to attempting to render
+                problematic = []
 
-        # Map and details
-        if not top_df.empty and lat_col and lon_col:
-            map_df = top_df.rename(columns={lat_col: 'lat', lon_col: 'lon'})
-            st.map(map_df[['lat', 'lon']])
+            if problematic:
+                st.warning("Found non-serializable objects inside the map (callables). Falling back to HTML render and logging details.")
+                st.write(problematic)
+                try:
+                    components.html(city_map._repr_html_(), height=500)
+                except Exception as e:
+                    st.error(f": {e}")
+            else:
+                # Try the normal st_folium render and fall back to HTML on error with diagnostics
+                try:
+                    st_folium(city_map, width=700, height=500)
+                except Exception as e:
+                    # Suppress the known folium->streamlit JSON serialization error message
+                    msg = str(e)
+                    if ("Object of type function is not JSON serializable" in msg
+                            or "Could not convert component args to JSON" in msg):
+                        # do not display the large TypeError to the user; silently fallback
+                        pass
+                    else:
+                        st.error(f"Map rendering error: {e}")
+                        # fallback to HTML without showing an additional info message
+
+                    try:
+                        components.html(city_map._repr_html_(), height=500)
+                    except Exception as e2:
+                        st.error(f"HTML fallback failed: {e2}")
+        
+        # City rankings
+        st.header("Top Cities by Charging Score")
+        
+        # Filter data
+        if selected_county and selected_county != "All Counties":
+            filtered_data = city_features[city_features['County'] == selected_county]
         else:
-            st.info("No mappable city centroids found in the selection.")
-
-        # Simplified columns and friendly names
-        col_map = {
-            'city': 'City',
-            'county': 'County',
-            'ev_count': 'Number of EVs',
-            'required_chargers': 'Suggested Chargers',
-            'high_demand': 'High Demand Area',
-        }
-        show_cols = [c for c in ['city','county','ev_count','required_chargers','high_demand'] if c in top_df.columns]
-        if lat_col and lon_col:
-            show_cols += [lat_col, lon_col]
-            col_map[lat_col] = 'Latitude'
-            col_map[lon_col] = 'Longitude'
-        # Rename columns for display
-        display_df = top_df[show_cols].rename(columns=col_map).reset_index(drop=True)
-        st.dataframe(display_df)
-
-        st.download_button(
-            "Download recommended cities (CSV)",
-            data=display_df.to_csv(index=False),
-            file_name="recommended_cities_new_chargers.csv",
-            mime="text/csv"
+            filtered_data = city_features
+        
+        # Display top cities
+        top_cities = filtered_data.nlargest(10, 'Charging_Score')[
+            ['City', 'County', 'EV_Count', 'Avg_Range', 'Avg_MSRP', 'Charging_Score']
+        ].round(2)
+        
+        st.dataframe(
+            top_cities,
+            use_container_width=True,
+            column_config={
+                "City": "City",
+                "County": "County", 
+                "EV_Count": "EV Count",
+                "Avg_Range": "Avg Range (miles)",
+                "Avg_MSRP": "Avg MSRP ($)",
+                "Charging_Score": "Charging Score"
+            }
         )
 
-st.markdown("---")
-st.markdown("### Suggested Locations for New Charging Stations")
-st.write("These locations are recommended based on demand and geographic analysis. The selection method shows how each site was chosen.")
-if not stations.empty:
-    # Simplify columns and rename for manufacturers
-    col_map = {
-        'station_id': 'Suggested Site ID',
-        'latitude': 'Latitude',
-        'longitude': 'Longitude',
-        'method': 'Selection Method',
-    }
-    show_cols = [c for c in ['station_id','latitude','longitude','method'] if c in stations.columns]
-    display_stations = stations[show_cols].rename(columns=col_map)
-    st.map(display_stations.rename(columns={'Latitude':'lat','Longitude':'lon'}))
-    st.dataframe(display_stations)
-    st.download_button(
-        "Download suggested station sites (CSV)",
-        data=display_stations.to_csv(index=False),
-        file_name="suggested_station_sites.csv",
-        mime="text/csv"
-    )
-else:
-    st.info("No suggested station sites found. Please run the analysis to generate artifacts/stations.csv.")
+        # Collapsible visualization section for station owners (hidden by default)
+        with st.expander("Visualizations for selected city:", expanded=True):
+            try:
+                viz_city = st.session_state.get('selected_city')
+                viz_county = selected_county
+                if not viz_city:
+                    st.info('Select a city from the right panel to view visualizations.')
+                else:
+                    # Fetch city row
+                    city_row = city_features[
+                        (city_features['City'] == viz_city) & 
+                        (city_features['County'] == viz_county if viz_county != "All Counties" else True)
+                    ].iloc[0]
+
+                    # Compute prediction on-demand
+                    pred = predict_charging_score(city_row, models[selected_model], scaler, feature_columns)
+
+                    # Select candidate features (limit to top 4 for clarity for non-technical users)
+                    candidate_feats = []
+                    if isinstance(feature_columns, (list, tuple)) and len(feature_columns) > 0:
+                        candidate_feats = [f for f in feature_columns if f in city_features.columns]
+                    defaults = ['EV_Count', 'Avg_Range', 'Avg_MSRP']
+                    for d in defaults:
+                        if d not in candidate_feats and d in city_features.columns:
+                            candidate_feats.append(d)
+                    feats = candidate_feats[:4]  # keep chart simple and readable
+
+                    county_df = city_features[city_features['County'] == viz_county] if viz_county != 'All Counties' else city_features
+
+                    if len(feats) > 0:
+                        county_means = county_df[feats].mean()
+                        city_vals = city_row[feats]
+                        comp_df = pd.DataFrame({
+                            'Feature': feats,
+                            'City': [city_vals[f] if pd.notna(city_vals[f]) else 0 for f in feats],
+                            'County Avg': [county_means[f] if pd.notna(county_means[f]) else 0 for f in feats]
+                        })
+
+                        # Create a simple horizontal grouped bar chart with numeric labels
+                        melt_df = comp_df.melt(id_vars='Feature', value_vars=['City', 'County Avg'], var_name='Series', value_name='Value')
+                        fig_comp = px.bar(melt_df, x='Value', y='Feature', color='Series', orientation='h', barmode='group',
+                                          title='Top features: City vs County average',
+                                          color_discrete_map={'City':'#ff9aa2','County Avg':'#b5ead7'},
+                                          text='Value')
+                        fig_comp.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+                        fig_comp.update_layout(yaxis={'categoryorder':'total ascending'},
+                                               title_x=0.02,
+                                               legend_title_text='',
+                                               font=dict(size=12))
+                        st.plotly_chart(fig_comp, use_container_width=True)
+                        st.caption("Comparison of a few key metrics for the selected city against the county average.")
+
+                    if 'Charging_Score' in county_df.columns:
+                        # Simpler pastel histogram with a clear marker for the selected city
+                        fig_hist = px.histogram(county_df, x='Charging_Score', nbins=20, title='Charging Score Distribution (County)',
+                                                color_discrete_sequence=['#b5ead7'])
+                        fig_hist.add_vline(x=pred, line_dash='dash', line_color='#0b3d91', annotation_text='Selected city', annotation_position='top')
+                        fig_hist.update_layout(xaxis_title='Charging Score', yaxis_title='Number of Cities', font=dict(size=12))
+                        st.plotly_chart(fig_hist, use_container_width=True)
+                        st.caption(' how the selected city compares to other cities in the county. The dashed line is the city score.')
+
+                        def tier_label(s):
+                            if s > 100:
+                                return 'High'
+                            elif s > 50:
+                                return 'Medium'
+                            else:
+                                return 'Low'
+
+                        tiers = county_df['Charging_Score'].dropna().apply(tier_label).value_counts().reindex(['High', 'Medium', 'Low']).fillna(0)
+                        pie_df = pd.DataFrame({'Tier': tiers.index, 'Count': tiers.values})
+                        # soft pastel color palette for better aesthetics
+                        fig_pie = px.pie(pie_df, names='Tier', values='Count', title='County Priority Breakdown', color='Tier',
+                                         color_discrete_map={'High':'#ff9aa2','Medium':'#ffd3b6','Low':'#b5ead7'})
+                        st.plotly_chart(fig_pie, use_container_width=True)
+
+            except Exception as viz_e:
+                print('Visualization error:', viz_e)
+    
+    with col2:
+        st.header("Model Performance")
+        
+        if selected_model in performance_metrics:
+            metrics = performance_metrics[selected_model]
+            
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4>{metrics['model_name']}</h4>
+                <p><strong>Test R²:</strong> {metrics['test_r2']:.3f}</p>
+                <p><strong>Test MSE:</strong> {metrics['test_mse']:.3f}</p>
+                <p><strong>Test MAE:</strong> {metrics['test_mae']:.3f}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Prediction section
+        st.header("Predict Charging Score")
+        
+        # Get unique cities for the selected county
+        if selected_county and selected_county != "All Counties":
+            available_cities = city_features[city_features['County'] == selected_county]['City'].unique()
+        else:
+            available_cities = city_features['City'].unique()
+
+        selected_city = st.selectbox("Select City", sorted(available_cities), key='selected_city')
+
+        if st.button("Predict", type="primary"):
+            # Get city data
+            city_data = city_features[
+                (city_features['City'] == selected_city) & 
+                (city_features['County'] == selected_county if selected_county != "All Counties" else True)
+            ].iloc[0]
+            
+            # Make prediction
+            prediction = predict_charging_score(
+                city_data, models[selected_model], scaler, feature_columns
+            )
+            
+            if prediction is not None:
+                st.markdown(f"""
+                <div class="prediction-card">
+                    <h3>Predicted Charging Score</h3>
+                    <h2 style="color: #0b3d91; font-weight: 700;">{prediction:.2f}</h2>
+                    <p style="color: #0b2a5a; font-weight:600;">for {selected_city}, {selected_county}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Interpretation
+                if prediction > 100:
+                    st.success("🚀 High Priority: Excellent location for charging station!")
+                elif prediction > 50:
+                    st.info("⚡ Medium Priority: Good location for charging station")
+                else:
+                    st.warning("🔋 Low Priority: Consider other locations first")
+        
+        # Statistics
+        st.header("County Statistics")
+        
+        if selected_county and selected_county != "All Counties":
+            county_data = city_features[city_features['County'] == selected_county]
+        else:
+            county_data = city_features
+        
+        total_evs = county_data['EV_Count'].sum()
+       # avg_score = county_data['Charging_Score'].mean()
+        num_cities = len(county_data)
+        
+        st.metric("Total EVs", f"{total_evs:,}")
+        #st.metric("Average Score", f"{avg_score:.1f}")
+        st.metric("Number of Cities", num_cities)
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; color: #666;">
+        <p>Smart Charge Locator - Predicting optimal EV charging station locations</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()
