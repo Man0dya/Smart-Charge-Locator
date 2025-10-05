@@ -331,7 +331,7 @@ def main():
             """, unsafe_allow_html=True)
         
         # Prediction section
-        st.header("Predict Charging Score")
+        st.header("Check Location Priority")
         
         # Get unique cities for the selected county
         if selected_county and selected_county != "All Counties":
