@@ -356,7 +356,7 @@ def main():
             if prediction is not None:
                 st.markdown(f"""
                 <div class="prediction-card">
-                    <h3>Predicted Charging Score</h3>
+                    <h3>Charging Score</h3>
                     <h2 style="color: #0b3d91; font-weight: 700;">{prediction:.2f}</h2>
                     <p style="color: #0b2a5a; font-weight:600;">for {selected_city}, {selected_county}</p>
                 </div>
