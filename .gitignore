@@ -17,3 +17,10 @@ venv/
 **/*.log
 **/data/interim/
 **/data/processed/
+
+# Allow required assets for the Streamlit app to be committed
+!streamlit_app.py
+!.streamlit/**
+!app/**
+!models/**
+!data/processed/**

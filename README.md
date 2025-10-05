@@ -97,9 +97,10 @@ SMART_CHARGE_LOCATOR/
    # 7. notebooks/model_training/4.4_XGBoost.ipynb
    ```
 
-2. **Launch the Streamlit web application**
+2. **Launch the Streamlit web application (local)**
    ```bash
-   streamlit run app/app.py
+   # Windows PowerShell
+   streamlit run streamlit_app.py
    ```
 
 3. **Open your browser** and navigate to `http://localhost:8501`
@@ -224,3 +225,26 @@ For questions or issues:
 ---
 
 **Smart Charge Locator** - Making EV infrastructure planning smarter with data science! 🔋⚡
+
+---
+
+## ☁️ Deploying to Streamlit Community Cloud
+
+The repo is ready to deploy on Streamlit Cloud.
+
+Required files committed:
+- `streamlit_app.py` (entrypoint)
+- `app/app.py` (main app code)
+- `requirements.txt` (runtime deps)
+- `models/*.pkl` and `data/processed/*` used by the app
+
+Steps:
+1. Push your latest changes to GitHub.
+2. Go to https://share.streamlit.io, sign in, and click New app.
+3. Select this repo and branch, set Main file to `streamlit_app.py`.
+4. Click Deploy.
+
+Notes:
+- Keep `requirements.txt` minimal to speed up builds. Use `requirements-dev.txt` locally for notebooks.
+- Ensure the `models/` and `data/processed/` folders are tracked in Git and under 1 GB total. If large, consider storing smaller subsets or hosting assets externally.
+- If Folium map fails to render due to serialization issues, the app automatically falls back to HTML rendering.
