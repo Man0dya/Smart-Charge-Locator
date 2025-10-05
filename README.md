@@ -2,189 +2,122 @@
 
 Live app: https://smart-charge-locator.streamlit.app
 
-A machine learning project that predicts optimal locations for electric vehicle (EV) charging stations based on EV population data and geographic factors.
+Smart Charge Locator predicts and visualizes ideal locations for EV charging stations using registration and geographic features. The app exposes an interactive map, top-city rankings, and on-demand charging-priority predictions driven by trained ML models (XGBoost is used by default).
 
-## 📋 Project Overview
+## Key features
 
-This project analyzes Electric Vehicle Population Data to identify the most suitable cities for installing new charging stations. Users can input a county name to get predictions for cities within that county, helping infrastructure planners make data-driven decisions.
+- Interactive Folium map with city markers and charging-priority popups
+- Top-cities ranking table and per-city visual comparisons vs county averages
+- On-demand predictions using pre-trained models (XGBoost by default)
+- Simple, responsive Streamlit UI for quick exploration
 
-## 🎯 Key Features
-
-- **Data Analysis**: Comprehensive analysis of EV distribution patterns
-- **Machine Learning Models**: Multiple ML models (Linear Regression, Ridge, Random Forest, XGBoost)
-- **Interactive Web App**: Streamlit-based interface for easy interaction
-- **Geographic Visualization**: Interactive maps showing EV distribution and charging station suitability
-- **County-based Predictions**: Input county name to get city-level predictions
-
-## 🏗️ Project Structure
+## Repository layout
 
 ```
-SMART_CHARGE_LOCATOR/
-├── .venv/                          # Virtual environment
-├── app/                            # Streamlit web application
-│   └── app.py                     # Main application file
-├── data/                          # Data directory
-│   ├── processed/                 # Processed and cleaned data
-│   ├── raw/                       # Original dataset
-│   └── Electric_Vehicle_Population_Data.csv
-├── models/                        # Trained ML models
-│   ├── linear_regression.pkl
-│   ├── ridge_regression.pkl
-│   ├── random_forest.pkl
-│   └── xgboost.pkl
-├── notebooks/                     # Jupyter notebooks
-│   ├── model_training/           # Model training notebooks
-│   │   ├── 4.1_Linear_Regression.ipynb
-│   │   ├── 4.2_Ridge_Regression.ipynb
-│   │   ├── 4.3_Random_Forest.ipynb
-│   │   └── 4.4_XGBoost.ipynb
-│   ├── 01_Data_Loading_and_Cleaning.ipynb
-│   ├── 02_Exploratory_Data_Analysis.ipynb
-│   └── 03_Feature_Engineering.ipynb
-├── README.md                      # Project documentation
-└── requirements.txt               # Python dependencies
+Smart-Charge-Locator/
+├── .streamlit/                  # Streamlit config
+├── app/                         # Streamlit app code (entry: streamlit_app.py)
+├── data/                        # Data (raw & processed)
+│   └── processed/               # Files required at runtime
+├── models/                      # Trained model artifacts (.pkl)
+├── notebooks/                   # Notebooks used to generate data and train models
+├── requirements.txt             # Runtime Python dependencies
+├── requirements-dev.txt         # Dev / notebook dependencies
+└── README.md
 ```
 
-## 🚀 Getting Started
+## Quick start (users)
 
-### For users (no install)
+Open the live app (no install required):
 
-- Open the live app: https://smart-charge-locator.streamlit.app
-- Choose a county from the left sidebar.
-- Explore the interactive map and top cities table.
-- Pick a city on the right and click Predict to see its Charging Score and visualizations.
+https://smart-charge-locator.streamlit.app
 
-### Prerequisites
+Basic flow:
 
-- Python 3.8 or higher
-- pip (Python package installer)
+- Choose a county from the left sidebar
+- Inspect the interactive map and marker popups
+- View the Top Cities table
+- Select a city and click Predict to show the Charging Score and visualizations
 
-### Installation
+## Install and run locally (developers)
 
-1. **Clone or download the project**
-   ```bash
-   # If using git
-   git clone <repository-url>
-   cd SMART_CHARGE_LOCATOR
-   
-   # Or simply navigate to the project directory
-   cd SMART_CHARGE_LOCATOR
-   ```
+1. Clone the repo and switch to the project folder:
 
-2. **Create and activate virtual environment**
-   ```bash
-   # Create virtual environment
-   python -m venv .venv
-   
-   # Activate virtual environment
-   # On Windows:
-   .venv\Scripts\activate
-   
-   # On macOS/Linux:
-   source .venv/bin/activate
-   ```
+```powershell
+git clone <repository-url>
+cd Smart-Charge-Locator
+```
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. Create and activate a venv (Windows example):
 
-### Running the Project
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-1. **Execute the data processing notebooks** (in order):
-   ```bash
-   # Start Jupyter Notebook
-   jupyter notebook
-   
-   # Run notebooks in this order:
-   # 1. 01_Data_Loading_and_Cleaning.ipynb
-   # 2. 02_Exploratory_Data_Analysis.ipynb
-   # 3. 03_Feature_Engineering.ipynb
-   # 4. notebooks/model_training/4.1_Linear_Regression.ipynb
-   # 5. notebooks/model_training/4.2_Ridge_Regression.ipynb
-   # 6. notebooks/model_training/4.3_Random_Forest.ipynb
-   # 7. notebooks/model_training/4.4_XGBoost.ipynb
-   ```
+3. Install runtime dependencies:
 
-2. **Launch the Streamlit web application (local)**
-   ```bash
-   # Windows PowerShell
-   streamlit run streamlit_app.py
-   ```
+```powershell
+pip install -r requirements.txt
+```
 
-3. **Open your browser** and navigate to `http://localhost:8501`
+4. Run the app locally:
 
-### For developers
+```powershell
+streamlit run streamlit_app.py
+```
 
-- Local setup
-   - Create and activate a virtual environment
-   - Install runtime dependencies: `pip install -r requirements.txt`
-   - Ensure the following runtime assets exist (relative to repo root):
-      - `data/processed/city_features_engineered.csv`
-      - `data/processed/scaler.pkl`
-      - `data/processed/feature_columns.pkl`
-      - `models/xgboost.pkl`
-      - (optional) other model files and metrics JSONs in `data/processed/`
-   - Run locally: `streamlit run streamlit_app.py`
+Open http://localhost:8501 in your browser.
 
-- Notebooks and full pipeline
-   - Optional: `pip install -r requirements-dev.txt` for Jupyter and geo/plot libraries
-   - Use the notebooks in `notebooks/` to regenerate features and train models
+## Required runtime assets
 
-- Environment variables
-   - `DATA_ROOT` (optional): If set, the app will look for data and models under this folder before falling back to current working directory and project root.
+The app expects these files to be present (relative to repo root or pointed to by the `DATA_ROOT` env var):
 
-## 🧩 Troubleshooting
+- data/processed/city_features_engineered.csv
+- data/processed/scaler.pkl
+- data/processed/feature_columns.pkl
+- models/xgboost.pkl
 
-- File not found (e.g., city_features_engineered.csv)
-   - Ensure the files listed above are present in the repository (they’re allowed by `.gitignore`).
-   - On Streamlit Cloud, push these files to GitHub so they’re deployed with the app.
-   - You can also set `DATA_ROOT` in the Streamlit app’s Settings → Advanced → Environment variables to point to the base folder containing `data/` and `models/`.
+If you don't want to commit these large files, host them externally and set `DATA_ROOT` in Streamlit Cloud (App settings → Advanced → Environment variables) or add a small download bootstrap in the app.
 
-- Port already in use locally
-   - Run on another port: `streamlit run streamlit_app.py --server.port 8503`
+## Deployment (Streamlit Community Cloud)
 
-- Build errors on Streamlit Cloud involving pandas/numpy compilation
-   - The current `requirements.txt` uses versions with prebuilt wheels compatible with Python 3.13. If the builder still tries to compile, clear cache and redeploy.
-   - You can also keep `runtime.txt` = `python-3.11` and clear cache to force Python 3.11.
+1. Push your branch to GitHub
+2. On https://share.streamlit.io create a new app and select this repository
+3. Set the main file to `streamlit_app.py`
+4. If you changed `runtime.txt` or package versions, go to Advanced → Clear cache and Redeploy
 
-## 📊 Data Processing Pipeline
+Notes:
+- To avoid native builds, use the `requirements.txt` provided (it targets versions with prebuilt wheels for recent Python versions). If the builder compiles pandas/numpy, try clearing cache or pin `runtime.txt` to `python-3.11`.
 
-### 1. Data Loading and Cleaning (`01_Data_Loading_and_Cleaning.ipynb`)
-- Loads the Electric Vehicle Population Data
-- Handles missing values and data inconsistencies
-- Creates additional features like vehicle age
-- Extracts geographic coordinates
-- Saves cleaned data for further processing
+## Development workflow
 
-### 2. Exploratory Data Analysis (`02_Exploratory_Data_Analysis.ipynb`)
-- Analyzes EV distribution by county and city
-- Creates charging station suitability scores
-- Generates interactive maps
-- Identifies patterns in EV adoption
-- Saves analysis results
+- Branching: `git checkout -b feature/short-description`
+- Run the app locally and validate flows
+- Open a pull request and use the PR template in `.github/pull_request_template.md`
+- Follow the contributing guide in `CONTRIBUTING.md`
 
-### 3. Feature Engineering (`03_Feature_Engineering.ipynb`)
-- Creates city-level aggregated features
-- Engineers new features for machine learning
-- Handles categorical variables
-- Prepares training and test datasets
-- Saves processed data for model training
+## Troubleshooting
 
-### 4. Model Training (`notebooks/model_training/`)
-- **Linear Regression**: Baseline model with interpretable coefficients
-- **Ridge Regression**: Regularized linear model to prevent overfitting
-- **Random Forest**: Ensemble method capturing non-linear relationships
-- **XGBoost**: Gradient boosting for high performance predictions
+- Error loading data: Ensure the files under `data/processed/` are present and not ignored by Git. You can set `DATA_ROOT` to an alternative path.
+- Port already in use: `streamlit run streamlit_app.py --server.port 8503`
+- Streamlit Cloud build errors: Clear the app cache (Advanced → Clear cache) and redeploy; ensure `requirements.txt` uses compatible package versions/wheels.
 
-## 🎮 Using the Web Application
+## Community & governance
 
-1. **Select a Model**: Choose from available trained models
-2. **Choose a County**: Select a county to analyze
-3. **View the Map**: Interactive map showing EV distribution and charging scores
-4. **Check Rankings**: See top cities by charging station suitability
-5. **Make Predictions**: Select a specific city to get charging score predictions
-6. **View Statistics**: County-level statistics and model performance metrics
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Contributing Guide](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [License (MIT)](./LICENSE)
+
+## Acknowledgements
+
+- Data source: Electric Vehicle Population Data (see `data/raw/`)
+- Built with: Streamlit, Pandas, NumPy, scikit-learn, XGBoost, Plotly, Folium
+
+---
+
+If you'd like, I can add CI (lint + a simple import/test), badges to the top of this README, or a small architecture diagram—tell me which you'd prefer next.
 
 ## 📈 Model Performance
 
@@ -270,6 +203,14 @@ For questions or issues:
 **Smart Charge Locator** - Making EV infrastructure planning smarter with data science! 🔋⚡
 
 ---
+
+## 🧭 Community & Governance
+
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Contributing Guide](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [License (MIT)](./LICENSE)
+- Issue templates and PR template available under [./.github](./.github)
 
 ## ☁️ Deploying to Streamlit Community Cloud
 
