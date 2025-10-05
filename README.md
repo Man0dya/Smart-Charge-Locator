@@ -11,57 +11,83 @@ Smart Charge Locator predicts and visualizes ideal locations for EV charging sta
 - On-demand predictions using pre-trained models (XGBoost by default)
 - Simple, responsive Streamlit UI for quick exploration
 
-## Repository layout
+## 🔋 Smart Charge Locator
 
-```
-Smart-Charge-Locator/
-├── .streamlit/                  # Streamlit config
-├── app/                         # Streamlit app code (entry: streamlit_app.py)
-├── data/                        # Data (raw & processed)
-│   └── processed/               # Files required at runtime
-├── models/                      # Trained model artifacts (.pkl)
-├── notebooks/                   # Notebooks used to generate data and train models
-├── requirements.txt             # Runtime Python dependencies
-├── requirements-dev.txt         # Dev / notebook dependencies
-└── README.md
-```
+Live demo: https://smart-charge-locator.streamlit.app
 
-## Quick start (users)
+Smart Charge Locator predicts and visualizes high-priority locations for EV charging stations using vehicle registration and geographic features. The app provides an interactive map, top-city rankings, and on-demand charging-priority predictions powered by pre-trained ML models (XGBoost by default).
 
-Open the live app (no install required):
+## Table of contents
 
+- Overview
+- Quick start — Users
+- Local development — Developers
+- Runtime assets & configuration
+- Extended project structure
+- Deployment
+- Troubleshooting
+- Contributing
+- License & acknowledgements
+
+## Overview
+
+What this repo contains:
+- A Streamlit web app for exploring EV data and predicting charging priority
+- Processed data and trained model artifacts used at runtime
+- Notebooks used for data cleaning, feature engineering and model training
+
+Who this README is for:
+- Users: want to try the live app or run a demo without installing anything
+- Developers: want to run the app locally, reproduce results, or extend the codebase
+
+Contract (small):
+- Inputs: county/city selection, optional model choice, and the processed feature files
+- Outputs: per-city charging score, visualizations, and exportable CSVs
+- Success: app runs locally or on Streamlit Cloud and produces consistent predictions
+- Error modes: missing data files, incompatible Python packages, or model artifact mismatch
+
+## Quick start — Users
+
+Try the live app (no install):
 https://smart-charge-locator.streamlit.app
 
-Basic flow:
+Usage highlights:
+- Select a county from the left sidebar
+- Explore the interactive map and click markers for city-level details
+- View the Top Cities table and compare cities vs county averages
+- Use the Predict button for a city's charging-priority score and visualizations
 
-- Choose a county from the left sidebar
-- Inspect the interactive map and marker popups
-- View the Top Cities table
-- Select a city and click Predict to show the Charging Score and visualizations
+## Local development — Developers
 
-## Install and run locally (developers)
+This section explains how to set up a local dev environment on Windows (PowerShell). If you use macOS / Linux, the commands are similar but use your shell's activation steps.
 
-1. Clone the repo and switch to the project folder:
+1) Clone the repository and open a PowerShell prompt in the repo root:
 
 ```powershell
 git clone <repository-url>
 cd Smart-Charge-Locator
 ```
 
-2. Create and activate a venv (Windows example):
+2) Create and activate a virtual environment (PowerShell):
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-3. Install runtime dependencies:
+3) Install runtime dependencies:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-4. Run the app locally:
+4) (Optional) Install dev/test dependencies:
+
+```powershell
+pip install -r requirements-dev.txt
+```
+
+5) Run the app locally:
 
 ```powershell
 streamlit run streamlit_app.py
@@ -69,170 +95,106 @@ streamlit run streamlit_app.py
 
 Open http://localhost:8501 in your browser.
 
-## Required runtime assets
+Developer notes:
+- If the app crashes on missing files, set the `DATA_ROOT` environment variable to point to a folder containing required assets (see "Runtime assets"). Example (PowerShell):
 
-The app expects these files to be present (relative to repo root or pointed to by the `DATA_ROOT` env var):
+```powershell
+$env:DATA_ROOT = "E:\path\to\data"
+```
+
+- Use the `app/` package for app logic. `streamlit_app.py` is the entrypoint that wires Streamlit to the code in `app/`.
+
+Edge cases to consider while developing:
+- Missing or corrupted processed data files
+- Model artifact versions that don't match feature columns/scaler
+- Large file sizes (Streamlit Cloud limits) — provide smaller dev datasets
+
+## Runtime assets & configuration
+
+The app expects the following runtime files to be available under `data/processed/` (or under a path set with the `DATA_ROOT` env var):
 
 - data/processed/city_features_engineered.csv
 - data/processed/scaler.pkl
 - data/processed/feature_columns.pkl
-- models/xgboost.pkl
+- data/processed/X_train.npy, X_test.npy, y_train.npy (optional for diagnostics)
+- models/xgboost.pkl (default model)
 
-If you don't want to commit these large files, host them externally and set `DATA_ROOT` in Streamlit Cloud (App settings → Advanced → Environment variables) or add a small download bootstrap in the app.
+If you don't want to store large artifacts in the repository, host them externally and either:
+- set `DATA_ROOT` in your hosting environment (Streamlit Cloud: App settings → Advanced → Environment variables), or
+- add a small bootstrap in `streamlit_app.py` that downloads assets on first run.
 
-## Deployment (Streamlit Community Cloud)
+Configuration environment variables (optional):
+- DATA_ROOT — folder with processed data and models (defaults to repo root)
+- PORT or STREAMLIT_SERVER_PORT — to change the Streamlit port
 
+## Extended project structure
+
+The repository layout with key files explained:
+
+Smart-Charge-Locator/
+- .streamlit/                 · Streamlit configuration files
+- app/                        · Application package (core app code)
+   - __init__.py
+   - app.py                    · high-level app wiring and UI components
+   - utils.py                  · helper functions (data loading, IP/format helpers)
+   - models.py                 · model loading & predict wrappers
+- data/
+   - raw/                      · original input datasets (committed for reference)
+   - processed/                · prepared files used by the app (required at runtime)
+- models/                     · trained model artifacts (.pkl)
+- notebooks/                  · analysis and training notebooks
+   - 01_Data_Loading_and_Cleaning.ipynb
+   - 02_Exploratory_Data_Analysis.ipynb
+   - 03_Feature_Engineering.ipynb
+   - model_training/           · per-model training notebooks
+- requirements.txt            · minimal runtime dependencies
+- requirements-dev.txt        · extra packages for notebooks & testing
+- runtime.txt                 · pinned Python runtime for hosting (e.g. python-3.11)
+- streamlit_app.py            · Streamlit entrypoint (uses `app/` package)
+- README.md                   · this document
+
+Files you may inspect when developing:
+- `app/app.py` — main UI and callback wiring
+- `data/processed/feature_columns.pkl` — ensures model input ordering
+
+## Deployment
+
+Streamlit Community Cloud (Share) is the recommended simple host.
+
+Steps:
 1. Push your branch to GitHub
-2. On https://share.streamlit.io create a new app and select this repository
+2. Create an app at https://share.streamlit.io and point it to this repo
 3. Set the main file to `streamlit_app.py`
-4. If you changed `runtime.txt` or package versions, go to Advanced → Clear cache and Redeploy
+4. Add `DATA_ROOT` in app settings if assets are hosted externally
 
-Notes:
-- To avoid native builds, use the `requirements.txt` provided (it targets versions with prebuilt wheels for recent Python versions). If the builder compiles pandas/numpy, try clearing cache or pin `runtime.txt` to `python-3.11`.
-
-## Development workflow
-
-- Branching: `git checkout -b feature/short-description`
-- Run the app locally and validate flows
-- Open a pull request and use the PR template in `.github/pull_request_template.md`
-- Follow the contributing guide in `CONTRIBUTING.md`
+Notes & tips:
+- Use `runtime.txt` to pin Python to `python-3.11` to avoid building native wheels on some hosted builders
+- If artifacts are large, prefer hosting them on cloud storage (S3, GCS) and download them at startup
 
 ## Troubleshooting
 
-- Error loading data: Ensure the files under `data/processed/` are present and not ignored by Git. You can set `DATA_ROOT` to an alternative path.
-- Port already in use: `streamlit run streamlit_app.py --server.port 8503`
-- Streamlit Cloud build errors: Clear the app cache (Advanced → Clear cache) and redeploy; ensure `requirements.txt` uses compatible package versions/wheels.
+- Error loading data: confirm `DATA_ROOT` or that `data/processed/` contains required files
+- Port already in use: run `streamlit run streamlit_app.py --server.port 8503`
+- Model mismatch errors: ensure `feature_columns.pkl` and `scaler.pkl` match the model you load
+- Streamlit Cloud build errors: clear cache in app settings then redeploy
 
-## Community & governance
+## Contributing
 
-- [Code of Conduct](./CODE_OF_CONDUCT.md)
-- [Contributing Guide](./CONTRIBUTING.md)
-- [Security Policy](./SECURITY.md)
-- [License (MIT)](./LICENSE)
+Small checklist for contributors:
+1. Fork the repository
+2. Create a branch named `feature/desc` or `fix/desc`
+3. Add code + tests for new behavior when practical
+4. Run `pip install -r requirements-dev.txt` and validate locally
+5. Open a PR and use the PR template
 
-## Acknowledgements
+If you'd like help adding CI (lint + tests) or badges, open an issue and I can add a GitHub Actions workflow for a basic check (flake8 / isort / pytest).
 
-- Data source: Electric Vehicle Population Data (see `data/raw/`)
+## License & acknowledgements
+
+This project is provided under the terms in `LICENSE` (MIT)
+
+Acknowledgements:
+- Dataset: Electric Vehicle Population Data (see `data/raw/`)
 - Built with: Streamlit, Pandas, NumPy, scikit-learn, XGBoost, Plotly, Folium
 
 ---
-
-If you'd like, I can add CI (lint + a simple import/test), badges to the top of this README, or a small architecture diagram—tell me which you'd prefer next.
-
-## 📈 Model Performance
-
-The project includes multiple machine learning models with different strengths:
-
-- **Linear Regression**: Fast, interpretable, good baseline
-- **Ridge Regression**: Regularized, prevents overfitting
-- **Random Forest**: Handles non-linear relationships, feature importance
-- **XGBoost**: High performance, gradient boosting
-
-## 🔧 Key Features of the Web App
-
-- **Interactive Maps**: Folium-based maps with EV distribution
-- **Real-time Predictions**: Get charging scores for any city
-- **Model Comparison**: Switch between different ML models
-- **County Filtering**: Focus on specific geographic areas
-- **Performance Metrics**: View model accuracy and performance
-- **Responsive Design**: Works on desktop and mobile devices
-
-## 📋 Dataset Information
-
-The project uses the **Electric Vehicle Population Data** which includes:
-- Vehicle information (VIN, make, model, year)
-- Geographic data (county, city, state, coordinates)
-- EV specifications (electric range, MSRP, vehicle type)
-- Registration details and utility information
-
-## 🛠️ Technical Stack
-
-- **Python**: Core programming language
-- **Pandas**: Data manipulation and analysis
-- **NumPy**: Numerical computing
-- **Scikit-learn**: Machine learning algorithms
-- **XGBoost**: Gradient boosting framework
-- **Streamlit**: Web application framework
-- **Plotly**: Interactive visualizations
-- **Folium**: Interactive maps
-- **Jupyter**: Notebook environment
-
-## 📝 Usage Examples
-
-### For Infrastructure Planners
-1. Select your target county
-2. View the interactive map to see current EV distribution
-3. Check the top cities ranking for charging station priority
-4. Use the prediction tool to evaluate specific locations
-5. Make data-driven decisions for charging station placement
-
-### For Researchers
-1. Run the analysis notebooks to understand EV adoption patterns
-2. Experiment with different feature engineering approaches
-3. Compare model performance across different algorithms
-4. Analyze feature importance to understand key factors
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is for educational purposes as part of the FDM module mini project.
-
-## 🙏 Acknowledgments
-
-- Electric Vehicle Population Data source
-- FDM module instructors
-- Open source libraries and frameworks used
-
-## 📞 Support
-
-For questions or issues:
-1. Check the notebook documentation
-2. Review the error messages in the web app
-3. Ensure all dependencies are installed correctly
-4. Verify that all notebooks have been executed in order
-
----
-
-**Smart Charge Locator** - Making EV infrastructure planning smarter with data science! 🔋⚡
-
----
-
-## 🧭 Community & Governance
-
-- [Code of Conduct](./CODE_OF_CONDUCT.md)
-- [Contributing Guide](./CONTRIBUTING.md)
-- [Security Policy](./SECURITY.md)
-- [License (MIT)](./LICENSE)
-- Issue templates and PR template available under [./.github](./.github)
-
-## ☁️ Deploying to Streamlit Community Cloud
-
-The repo is ready to deploy on Streamlit Cloud.
-
-Required files committed:
-- `streamlit_app.py` (entrypoint)
-- `app/app.py` (main app code)
-- `requirements.txt` (runtime deps)
-- `models/*.pkl` and `data/processed/*` used by the app
-
-Steps:
-1. Push your latest changes to GitHub.
-2. Go to https://share.streamlit.io, sign in, and click New app.
-3. Select this repo and branch, set Main file to `streamlit_app.py`.
-4. Click Deploy.
-
-Notes:
-- Keep `requirements.txt` minimal to speed up builds. Use `requirements-dev.txt` locally for notebooks.
-- Ensure the `models/` and `data/processed/` folders are tracked in Git and under 1 GB total. If large, consider storing smaller subsets or hosting assets externally.
-- If Folium map fails to render due to serialization issues, the app automatically falls back to HTML rendering.
-- Pin Python to 3.11 for Streamlit Cloud to avoid building native deps on 3.13:
-   - `runtime.txt` should contain `python-3.11` (preferred by Streamlit Cloud)
-   - `.python-version` should contain `3.11` (helps some builders pick the right version)
-   - After pushing these files, open the app settings in Streamlit Cloud → Advanced → Clear cache, then Redeploy so the new Python is used.
