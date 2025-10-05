@@ -316,7 +316,7 @@ def main():
                 print('Visualization error:', viz_e)
     
     with col2:
-        st.header("Model Performance")
+        st.header("")
         
         if selected_model in performance_metrics:
             metrics = performance_metrics[selected_model]
