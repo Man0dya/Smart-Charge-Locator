@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import joblib
 import json
+import os
+from pathlib import Path
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -45,37 +47,78 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    """Load processed data and models"""
+    """Load processed data and models with robust path resolution"""
+    def resolve_path(rel_path: str) -> Path | None:
+        # Candidates: explicit env override, CWD, repo root (two levels up from this file)
+        env_root = os.environ.get("DATA_ROOT")
+        if env_root:
+            p = Path(env_root) / rel_path
+            if p.exists():
+                return p
+        candidates = [
+            Path.cwd() / rel_path,
+            Path(__file__).resolve().parent.parent / rel_path,
+        ]
+        for p in candidates:
+            if p.exists():
+                return p
+        return None
+
+    def must_read_csv(rel_path: str) -> pd.DataFrame:
+        p = resolve_path(rel_path)
+        if p is None:
+            bases = [str(Path.cwd()), str(Path(__file__).resolve().parent.parent)]
+            raise FileNotFoundError(f"Missing {rel_path}. Looked under: {bases}")
+        return pd.read_csv(p)
+
+    def must_load_joblib(rel_path: str):
+        p = resolve_path(rel_path)
+        if p is None:
+            bases = [str(Path.cwd()), str(Path(__file__).resolve().parent.parent)]
+            raise FileNotFoundError(f"Missing {rel_path}. Looked under: {bases}")
+        return joblib.load(p)
+
     try:
         # Load city features
-        city_features = pd.read_csv('data/processed/city_features_engineered.csv')
-        
+        city_features = must_read_csv('data/processed/city_features_engineered.csv')
+
         # Load models
         models = {}
         model_names = ['linear_regression', 'ridge_regression', 'random_forest', 'xgboost']
-        
+
         for model_name in model_names:
+            model_path = f'models/{model_name}.pkl'
             try:
-                models[model_name] = joblib.load(f'models/{model_name}.pkl')
+                models[model_name] = must_load_joblib(model_path)
             except FileNotFoundError:
-                st.warning(f"Model {model_name} not found. Please run the model training notebooks first.")
-        
+                st.warning(f"Model {model_name} not found at {model_path}. If you don't need it, you can ignore this warning; the app defaults to XGBoost.")
+
         # Load scaler and feature columns
-        scaler = joblib.load('data/processed/scaler.pkl')
-        feature_columns = joblib.load('data/processed/feature_columns.pkl')
-        
+        scaler = must_load_joblib('data/processed/scaler.pkl')
+        feature_columns = must_load_joblib('data/processed/feature_columns.pkl')
+
         # Load performance metrics
         performance_metrics = {}
         for model_name in model_names:
-            try:
-                with open(f'data/processed/{model_name}_performance_metrics.json', 'r') as f:
-                    performance_metrics[model_name] = json.load(f)
-            except FileNotFoundError:
-                pass
-        
+            metrics_rel = f'data/processed/{model_name}_performance_metrics.json'
+            p = resolve_path(metrics_rel)
+            if p and p.exists():
+                try:
+                    with open(p, 'r') as f:
+                        performance_metrics[model_name] = json.load(f)
+                except Exception:
+                    pass
+
         return city_features, models, scaler, feature_columns, performance_metrics
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
+        # Provide quick diagnostics panel
+        with st.expander("Diagnostics: file locations"):
+            st.write({
+                "cwd": str(Path.cwd()),
+                "repo_root": str(Path(__file__).resolve().parent.parent),
+                "exists_city_features": (Path.cwd() / 'data/processed/city_features_engineered.csv').exists() or (Path(__file__).resolve().parent.parent / 'data/processed/city_features_engineered.csv').exists(),
+            })
         return None, None, None, None, None
 
 def predict_charging_score(city_data, model, scaler, feature_columns):

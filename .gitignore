@@ -23,4 +23,6 @@ venv/
 !.streamlit/**
 !app/**
 !models/**
+!data/
+!data/processed/
 !data/processed/**

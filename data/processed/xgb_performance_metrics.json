@@ -1,0 +1,15 @@
+{
+  "model_name": "XGBoost",
+  "n_estimators": 100,
+  "max_depth": 6,
+  "learning_rate": 0.1,
+  "train_mse": 494.64062413889275,
+  "test_mse": 12417.087512491547,
+  "train_r2": 0.9995222638200554,
+  "test_r2": 0.9633554375043514,
+  "train_mae": 3.49320393802978,
+  "test_mae": 27.841087289404598,
+  "n_features": 11,
+  "n_train_samples": 319,
+  "n_test_samples": 87
+}

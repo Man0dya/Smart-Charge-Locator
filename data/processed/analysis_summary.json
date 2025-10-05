@@ -1,0 +1,11 @@
+{
+  "total_evs": 250659,
+  "total_counties": 225,
+  "total_cities": 821,
+  "avg_electric_range": 174.5811839989787,
+  "avg_msrp": 59983.33195864951,
+  "top_county": "King",
+  "top_city": "Seattle",
+  "bev_percentage": 79.60536027032742,
+  "phev_percentage": 20.394639729672583
+}

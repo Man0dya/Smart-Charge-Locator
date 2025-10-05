@@ -1,0 +1,14 @@
+{
+  "model_name": "RandomForest",
+  "n_estimators": 100,
+  "max_depth": 10,
+  "train_mse": 229872.95083321238,
+  "test_mse": 8747.050576290074,
+  "train_r2": 0.7779830041358999,
+  "test_r2": 0.9741862299695474,
+  "train_mae": 43.13497460854708,
+  "test_mae": 20.587295275980015,
+  "n_features": 11,
+  "n_train_samples": 319,
+  "n_test_samples": 87
+}

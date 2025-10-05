@@ -1,0 +1,12 @@
+{
+  "total_cities": 895,
+  "features_count": 11,
+  "training_samples": 716,
+  "test_samples": 179,
+  "target_range": [
+    1.04,
+    15908.79
+  ],
+  "target_mean": 247.01972906403944,
+  "target_std": 942.5690926784974
+}

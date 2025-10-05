@@ -1,0 +1,12 @@
+Feature,Importance
+Make_Diversity,0.4983352
+EV_Count,0.46401998
+Distance_From_Seattle,0.012207625
+Avg_MSRP,0.010589346
+Avg_Range,0.00833281
+Distance_From_Spokane,0.0018189491
+County_Encoded,0.0015157287
+BEV_Ratio,0.001366069
+Range_Std,0.0012513353
+Avg_Age,0.0005090965
+PHEV_Ratio,5.3837517e-05

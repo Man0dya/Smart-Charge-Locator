@@ -1,0 +1,12 @@
+{
+  "model_name": "Linear Regression",
+  "train_mse": 0.000931881075056232,
+  "test_mse": 0.0014481073404175966,
+  "train_r2": 0.9999999990999662,
+  "test_r2": 0.9999999957264326,
+  "train_mae": 0.017645801564782054,
+  "test_mae": 0.017967472307909085,
+  "n_features": 11,
+  "n_train_samples": 319,
+  "n_test_samples": 87
+}

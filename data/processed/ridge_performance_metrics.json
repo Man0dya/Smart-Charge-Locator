@@ -1,0 +1,13 @@
+{
+  "model_name": "Ridge Regression",
+  "alpha": 1.0,
+  "train_mse": 2.6028381777502134,
+  "test_mse": 0.7552206350708552,
+  "train_r2": 0.9999974861143477,
+  "test_r2": 0.9999977712382447,
+  "train_mae": 0.5702237104304168,
+  "test_mae": 0.6158359267417031,
+  "n_features": 11,
+  "n_train_samples": 319,
+  "n_test_samples": 87
+}
