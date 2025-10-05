@@ -1,280 +1,248 @@
-# 🔋 Smart Charge Locator
+# Smart Charge Locator
 
-Live app: https://smart-charge-locator.streamlit.app
+[![Open in Streamlit](https://img.shields.io/badge/Live%20App-Open%20Smart%20Charge%20Locator-ff4b4b?logo=streamlit&logoColor=white)](https://smart-charge-locator.streamlit.app)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-green)
 
-Smart Charge Locator predicts and visualizes ideal locations for EV charging stations using registration and geographic features. The app exposes an interactive map, top-city rankings, and on-demand charging-priority predictions driven by trained ML models (XGBoost is used by default).
+Identify high‑priority locations for EV charging stations across Washington with an interactive Streamlit app powered by ML models and geospatial visuals.
 
-## Key features
-
-- Interactive Folium map with city markers and charging-priority popups
-- Top-cities ranking table and per-city visual comparisons vs county averages
-- On-demand predictions using pre-trained models (XGBoost by default)
-- Simple, responsive Streamlit UI for quick exploration
-
-## 🔋 Smart Charge Locator
-
-Live demo: https://smart-charge-locator.streamlit.app
-
-Smart Charge Locator predicts and visualizes high-priority locations for EV charging stations using vehicle registration and geographic features. The app provides an interactive map, top-city rankings, and on-demand charging-priority predictions powered by pre-trained ML models (XGBoost by default).
 
 ## Table of contents
 
 - Overview
-- Quick start — Users
-- Local development — Developers
-- Runtime assets & configuration
-- Extended project structure
-- Deployment
-- Troubleshooting
-- Contributing
-- License & acknowledgements
-
-## Overview
-
-What this repo contains:
-- A Streamlit web app for exploring EV data and predicting charging priority
-- Processed data and trained model artifacts used at runtime
-- Notebooks used for data cleaning, feature engineering and model training
-
-Who this README is for:
-- Users: want to try the live app or run a demo without installing anything
-- Developers: want to run the app locally, reproduce results, or extend the codebase
-
-Contract (small):
-- Inputs: county/city selection, optional model choice, and the processed feature files
-- Outputs: per-city charging score, visualizations, and exportable CSVs
-- Success: app runs locally or on Streamlit Cloud and produces consistent predictions
-- Error modes: missing data files, incompatible Python packages, or model artifact mismatch
-
-## Quick start — Users
-
-Try the live app (no install):
-https://smart-charge-locator.streamlit.app
-
-Usage highlights:
-- Select a county from the left sidebar
-- Explore the interactive map and click markers for city-level details
-- View the Top Cities table and compare cities vs county averages
-- Use the Predict button for a city's charging-priority score and visualizations
-
-## Local development — Developers
-
-This section explains how to set up a local dev environment on Windows (PowerShell). If you use macOS / Linux, the commands are similar but use your shell's activation steps.
-
-1) Clone the repository and open a PowerShell prompt in the repo root:
-
-```powershell
-git clone <repository-url>
-cd Smart-Charge-Locator
-```
-
-2) Create and activate a virtual environment (PowerShell):
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-3) Install runtime dependencies:
-
-```powershell
-pip install -r requirements.txt
-```
-
-4) (Optional) Install dev/test dependencies:
-
-```powershell
-pip install -r requirements-dev.txt
-```
-
-5) Run the app locally:
-
-```powershell
-streamlit run streamlit_app.py
-```
-
-Open http://localhost:8501 in your browser.
-
-Developer notes:
-- If the app crashes on missing files, set the `DATA_ROOT` environment variable to point to a folder containing required assets (see "Runtime assets"). Example (PowerShell):
-## 🔋 Smart Charge Locator
-
-Live demo: https://smart-charge-locator.streamlit.app
-
-Smart Charge Locator helps planners and researchers identify high-priority locations for EV charging stations. It uses vehicle registration and geographic features to produce city-level charging priority scores, an interactive map, and top-city rankings. The Streamlit app loads pre-trained models (XGBoost by default) and processed datasets to generate insights quickly.
-
-## Table of contents
-
-- Overview
-- For users (quick start)
-- For developers (local setup)
-- Configuration and runtime assets
+- What this app does
+- Quick start (for users)
+- Screens and features
+- Configuration
+- Data and models
 - Project structure
-- Training and notebooks
-- Deployment
 - Troubleshooting
-- Contributing
-- License and governance
+- For developers
+- Reproducing training/artifacts
+- FAQ
+- Roadmap
+- Deploying on Streamlit Community Cloud
+- Acknowledgements
+
 
 ## Overview
 
-This repository contains:
-- A Streamlit web app for exploring EV data and predicting charging priority
-- Preprocessed datasets and trained model artifacts used at runtime
-- Jupyter notebooks for data preparation, feature engineering, and model training
+Smart Charge Locator helps planners, utilities, and station operators prioritize where to deploy EV charging. It aggregates city‑level indicators (EV adoption, range, MSRP, and more) into a Charging Score, then visualizes and ranks locations with county filters and intuitive comparisons.
 
-Audience:
-- Users: try the live demo or run the app with minimal setup
-- Developers: extend the app logic, retrain models, or adapt inputs/outputs
 
-Success criteria:
-- App runs locally or on Streamlit Cloud and produces reproducible predictions
-- Users can explore maps, rankings, and make per-city predictions without errors
+## What this app does
 
-## For users (quick start)
+- Interactive map of cities with EV adoption and Charging Score overlays
+- County filter + top-10 city ranking table
+- Per-city "Charging Score" prediction using the trained XGBoost model
+- Side-by-side visual comparisons: selected city vs. county averages
+- Distribution and tier breakdowns to aid siting decisions
 
-No installation required — use the hosted app:
-https://smart-charge-locator.streamlit.app
 
-How to use:
-- Select a county in the left sidebar
-- Explore the interactive map and click markers for city details
-- Review the Top Cities table and compare cities against county averages
-- Use Predict for a city’s charging-priority score and visualizations
+## Quick start (for users)
 
-## For developers (local setup)
+Prerequisites
+- Python 3.11
+- pip
 
-The following steps assume Windows PowerShell. On macOS/Linux, adapt the venv activation path.
-
-1) Clone and enter the project:
+Install and run
 
 ```powershell
-git clone <repository-url>
-cd Smart-Charge-Locator
-```
-
-2) Create and activate a virtual environment:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-3) Install dependencies:
-
-```powershell
+# From the repository root
 pip install -r requirements.txt
-```
 
-4) (Optional) Install additional dev/notebook tools:
-
-```powershell
-pip install -r requirements-dev.txt
-```
-
-5) Run the app:
-
-```powershell
+# Start the Streamlit app
 streamlit run streamlit_app.py
+# Then open the link in the terminal (typically http://localhost:8501)
 ```
 
-Open http://localhost:8501.
-
-Notes for development:
-- The Streamlit entrypoint is `streamlit_app.py`, which calls `app/app.py:main()`.
-- If data artifacts are not in the repository path, set `DATA_ROOT` to a folder that contains them (see Configuration).
-
-## Configuration and runtime assets
-
-Environment variables (optional):
-- DATA_ROOT — folder that contains required data and models (default: repository root)
-- STREAMLIT_SERVER_PORT or run with `--server.port` — change local port if needed
-
-Minimal required runtime files (relative to repo root or DATA_ROOT):
+Required runtime files
 - data/processed/city_features_engineered.csv
 - data/processed/scaler.pkl
 - data/processed/feature_columns.pkl
-- models/xgboost.pkl (default model at runtime)
+- models/xgboost.pkl
 
-Optional but useful (diagnostics/metrics):
-- data/processed/X_train.npy, X_test.npy, y_train.npy, y_test.npy
-- data/processed/*_performance_metrics.json (per-model metrics)
+If these aren’t present, the app will show a helpful error. You can also point the app to a different data location via DATA_ROOT (see “Configuration”).
 
-Tip: To avoid committing large artifacts, host them in cloud storage and download them at startup, or set DATA_ROOT in your hosting environment.
+
+## Features at a glance
+
+- Interactive Folium map of Washington with city markers sized by EV count and colored by charging priority
+- County filter and top‑10 city ranking table
+- One‑click “Charging Score” prediction for the selected city (using XGBoost)
+- Plotly visuals: city vs. county average comparison, score distribution, priority tiers
+- Robust file discovery via DATA_ROOT or repo defaults, with in‑app diagnostics
+
+
+## Screens and features
+
+- Map: Folium-based interactive map, markers sized by EV_Count and colored by Charging_Score. A county selector filters the view.
+- Ranking: A sortable table of the top cities by Charging_Score.
+- Prediction: Select a county and city to get a model-based Charging Score, with a friendly priority interpretation.
+- Visuals: Compact comparisons of key features for the selected city versus the county average, plus score distributions and tier pie chart.
+
+
+## Configuration
+
+- Override data/models location with an environment variable:
+
+```powershell
+# Windows PowerShell
+$env:DATA_ROOT = "E:\\FDM\\PROJECT\\Newest\\Smart-Charge-Locator"
+streamlit run streamlit_app.py
+```
+
+The app searches these locations for files (in order):
+1) DATA_ROOT (if set)
+2) Current working directory
+3) Repository root
+
+
+## Data and models
+
+- Raw source: data/raw/Electric_Vehicle_Population_Data.csv
+- Processed features and artifacts: data/processed/*
+- Trained models: models/*.pkl
+
+Training notebooks (optional)
+- notebooks/model_training/4.1_Linear_Regression.ipynb
+- notebooks/model_training/4.2_Ridge_Regression.ipynb
+- notebooks/model_training/4.3_Random_Forest.ipynb
+- notebooks/model_training/4.4_XGBoost.ipynb
+
+Model performance (from provided metrics files)
+- RandomForest: test R² ≈ 0.974, test MAE ≈ 20.59
+- XGBoost: test R² ≈ 0.963, test MAE ≈ 27.84
+
+Note: The app currently defaults to XGBoost. You can retrain/update models via the notebooks and save them to models/xgboost.pkl.
+
+Data dictionary (selected columns)
+- City, County: geographic identifiers
+- Latitude_mean, Longitude_mean: city centroid coordinates used for mapping
+- EV_Count: number of EVs in the city
+- Avg_Range: average electric range (miles)
+- Avg_MSRP: average MSRP ($)
+- Charging_Score: engineered target/priority score used for ranking and visualization
+- Plus additional engineered features (total ≈ 11) used during model training
+
 
 ## Project structure
 
-Top-level layout with key files:
+```text
+Smart-Charge-Locator/
+├─ streamlit_app.py             # Streamlit entrypoint (Cloud/local)
+├─ app/
+│  └─ app.py                    # Main UI + data/model loading and visuals
+├─ data/
+│  ├─ raw/                      # Original dataset(s)
+│  └─ processed/                # Features, artifacts, metrics
+├─ models/                      # Trained model pickles
+├─ notebooks/                   # Data prep, EDA, feature engineering, training
+├─ requirements.txt             # Runtime deps (app only)
+├─ requirements-dev.txt         # Dev/Notebook deps (optional)
+├─ runtime.txt                  # Python version hint for Streamlit Cloud
+├─ CONTRIBUTING.md | SECURITY.md | CODE_OF_CONDUCT.md | LICENSE
+```
 
-- .github/                         GitHub templates and automation (if any)
-- .streamlit/                      Streamlit configuration
-- app/
-   - app.py                         Main app logic and UI
-- data/
-   - raw/                           Original datasets (reference)
-   - processed/                     Prepared datasets and artifacts used by the app
-- models/                          Trained model artifacts (.pkl)
-- notebooks/
-   - 01_Data_Loading_and_Cleaning.ipynb
-   - 02_Exploratory_Data_Analysis.ipynb
-   - 03_Feature_Engineering.ipynb
-   - model_training/
-      - 4.1_Linear_Regression.ipynb
-      - 4.2_Ridge_Regression.ipynb
-      - 4.3_Random_Forest.ipynb
-      - 4.4_XGBoost.ipynb
-- Model Accuracy Chart.ipynb       Summary/visual notebook at repo root
-- requirements.txt                 Runtime dependencies
-- requirements-dev.txt             Dev/notebook dependencies
-- runtime.txt                      Pinned Python for hosting (e.g., python-3.11)
-- streamlit_app.py                 Streamlit entrypoint
-- CODE_OF_CONDUCT.md               Community guidelines
-- CONTRIBUTING.md                  Contribution guide
-- SECURITY.md                      Security policy
-- LICENSE                          MIT license
-
-## Training and notebooks
-
-The `notebooks/` folder documents data preparation and model training. The `model_training/` subfolder contains per-model notebooks for linear regression, ridge, random forest, and XGBoost. Trained artifacts should be exported to `models/` and their corresponding preprocessors (e.g., `scaler.pkl`, `feature_columns.pkl`) to `data/processed/` for use by the app.
-
-## Deployment
-
-Streamlit Community Cloud (Share) is the simplest deployment target.
-
-1. Push your branch to GitHub
-2. Create an app at https://share.streamlit.io and select this repository/branch
-3. Set the main file to `streamlit_app.py`
-4. If artifacts are hosted externally, set `DATA_ROOT` in App settings → Advanced → Environment variables
-
-Tips:
-- Keep `requirements.txt` minimal to speed builds; pin `runtime.txt` to `python-3.11`
-- If build issues occur, clear the app cache and redeploy
 
 ## Troubleshooting
 
-- Missing data/artifacts: ensure required files exist under `data/processed/` and `models/`, or set `DATA_ROOT`
-- Port in use: `streamlit run streamlit_app.py --server.port 8503`
-- Model/feature mismatch: ensure `feature_columns.pkl` and `scaler.pkl` match the trained model
-- Streamlit Cloud build errors: clear cache and verify dependency versions
+- FileNotFoundError / missing artifacts
+  - Ensure the required files listed above exist. If you keep data elsewhere, set DATA_ROOT.
+- “XGBoost model not available”
+  - Run the XGBoost training notebook and export models/xgboost.pkl, or copy it from a previous run.
+- Map rendering error mentioning JSON serialization
+  - The app automatically falls back to HTML rendering for Folium if needed. Ensure streamlit-folium is installed (it is in requirements.txt).
+- Version conflicts
+  - Use requirements.txt for the app; requirements-dev.txt is for notebooks and may pin different versions for scientific stacks.
 
-## Contributing
 
-We welcome improvements and extensions.
-1. Fork the repository
-2. Create a branch: `feature/<name>` or `fix/<name>`
-3. Implement changes and add tests where practical
-4. Install dev dependencies and validate locally
-5. Open a PR and follow `CONTRIBUTING.md`
+## For developers
 
-## License and governance
+Local dev setup
+```powershell
+# Create and activate a virtual environment (recommended)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-This project is licensed under the MIT License — see `LICENSE`.
+# Install runtime deps
+pip install -r requirements.txt
 
-Community and security:
-- Code of Conduct — `CODE_OF_CONDUCT.md`
-- Contributing Guide — `CONTRIBUTING.md`
-- Security Policy — `SECURITY.md`
+# Optional: install extra tools for notebooks, EDA, and training
+pip install -r requirements-dev.txt
+```
 
----
+Recommended workflow
+- Use a feature branch for changes
+- Keep runtime requirements minimal; heavier notebook tooling should stay in requirements-dev.txt
+- If you change data processing or training logic, re-generate processed artifacts in data/processed and update models/*.pkl accordingly
+- Prefer small, focused PRs and include a brief note on data/model changes
 
-Questions or ideas? Open an issue — feedback helps improve data coverage, model quality, and UX.
+Coding conventions
+- Python 3.11, PEP 8 style
+- Keep Streamlit UI snappy and user-friendly; prefer simple, readable visuals
+
+Where things happen
+- UI and interaction: app/app.py
+- Entry point for Streamlit Cloud: streamlit_app.py
+- Data and model files: data/processed, models/
+- Notebooks: notebooks/*
+
+Contributing
+- See CONTRIBUTING.md for our PR workflow and tips
+- Be kind and follow the CODE_OF_CONDUCT.md
+
+Security
+- See SECURITY.md to report vulnerabilities privately
+
+License
+- MIT (see LICENSE)
+
+
+## Reproducing training/artifacts
+
+1) Data prep and feature engineering
+   - Run notebooks: 01_Data_Loading_and_Cleaning → 02_Exploratory_Data_Analysis → 03_Feature_Engineering
+   - Export artifacts to data/processed (e.g., city_features_engineered.csv, scaler.pkl, feature_columns.pkl)
+2) Model training
+   - Use notebooks in notebooks/model_training to train Linear, Ridge, RF, and XGBoost
+   - Save the chosen model to models/xgboost.pkl (the runtime default)
+3) Metrics
+   - Optionally persist metrics JSONs in data/processed for the sidebar performance panel
+
+
+## FAQ
+
+- Can I run with my own dataset?
+  - Yes. Prepare a city‑level CSV with similar columns and regenerate artifacts (scaler, columns list, model). Point DATA_ROOT to your folder.
+- Does the app support other states?
+  - The UI and code are state‑agnostic. Update the datasets to your geography and center the map as needed.
+- What if I only have the CSV but not the model?
+  - You can still explore the map and rankings based on Charging_Score in the CSV. For predictions, retrain via the notebooks.
+- Why XGBoost by default when RF tests higher here?
+  - XGBoost is a solid baseline and widely portable. You can switch to RF by saving models/random_forest.pkl and adjusting the app logic if desired.
+
+
+## Roadmap
+
+- Multi‑state/national data support and automatic map centering
+- Scenario analysis (e.g., simulate added chargers and re‑score)
+- Caching for faster startup in Streamlit Cloud
+- Optional Dockerfile and devcontainer for reproducible environments
+- Basic CI (linting) and data validation checks
+
+## Deploying on Streamlit Community Cloud
+
+- Repo: link this GitHub repository
+- Main file: streamlit_app.py
+- Python version: 3.11 (runtime.txt already included)
+- Python packages: requirements.txt
+- Data availability: ensure the necessary files are in the repo or accessible via DATA_ROOT or external storage
+
+
+## Acknowledgements
+
+- EV population data file provided in data/raw. Processed features and metrics in data/processed were generated via the included notebooks.
+
+—
+Questions or ideas? Open an issue or start a discussion. Happy charging! ⚡
