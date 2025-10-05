@@ -1,5 +1,7 @@
 # 🔋 Smart Charge Locator
 
+Live app: https://smart-charge-locator.streamlit.app
+
 A machine learning project that predicts optimal locations for electric vehicle (EV) charging stations based on EV population data and geographic factors.
 
 ## 📋 Project Overview
@@ -44,6 +46,13 @@ SMART_CHARGE_LOCATOR/
 ```
 
 ## 🚀 Getting Started
+
+### For users (no install)
+
+- Open the live app: https://smart-charge-locator.streamlit.app
+- Choose a county from the left sidebar.
+- Explore the interactive map and top cities table.
+- Pick a city on the right and click Predict to see its Charging Score and visualizations.
 
 ### Prerequisites
 
@@ -104,6 +113,40 @@ SMART_CHARGE_LOCATOR/
    ```
 
 3. **Open your browser** and navigate to `http://localhost:8501`
+
+### For developers
+
+- Local setup
+   - Create and activate a virtual environment
+   - Install runtime dependencies: `pip install -r requirements.txt`
+   - Ensure the following runtime assets exist (relative to repo root):
+      - `data/processed/city_features_engineered.csv`
+      - `data/processed/scaler.pkl`
+      - `data/processed/feature_columns.pkl`
+      - `models/xgboost.pkl`
+      - (optional) other model files and metrics JSONs in `data/processed/`
+   - Run locally: `streamlit run streamlit_app.py`
+
+- Notebooks and full pipeline
+   - Optional: `pip install -r requirements-dev.txt` for Jupyter and geo/plot libraries
+   - Use the notebooks in `notebooks/` to regenerate features and train models
+
+- Environment variables
+   - `DATA_ROOT` (optional): If set, the app will look for data and models under this folder before falling back to current working directory and project root.
+
+## 🧩 Troubleshooting
+
+- File not found (e.g., city_features_engineered.csv)
+   - Ensure the files listed above are present in the repository (they’re allowed by `.gitignore`).
+   - On Streamlit Cloud, push these files to GitHub so they’re deployed with the app.
+   - You can also set `DATA_ROOT` in the Streamlit app’s Settings → Advanced → Environment variables to point to the base folder containing `data/` and `models/`.
+
+- Port already in use locally
+   - Run on another port: `streamlit run streamlit_app.py --server.port 8503`
+
+- Build errors on Streamlit Cloud involving pandas/numpy compilation
+   - The current `requirements.txt` uses versions with prebuilt wheels compatible with Python 3.13. If the builder still tries to compile, clear cache and redeploy.
+   - You can also keep `runtime.txt` = `python-3.11` and clear cache to force Python 3.11.
 
 ## 📊 Data Processing Pipeline
 
