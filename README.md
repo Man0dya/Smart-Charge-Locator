@@ -248,4 +248,7 @@ Notes:
 - Keep `requirements.txt` minimal to speed up builds. Use `requirements-dev.txt` locally for notebooks.
 - Ensure the `models/` and `data/processed/` folders are tracked in Git and under 1 GB total. If large, consider storing smaller subsets or hosting assets externally.
 - If Folium map fails to render due to serialization issues, the app automatically falls back to HTML rendering.
-- We pin Streamlit Cloud’s Python via `runtime.txt` to `python-3.11` to match available wheels for pandas, numpy, shapely, etc. Without this, Cloud defaults to Python 3.13 and may fail building native deps.
+- Pin Python to 3.11 for Streamlit Cloud to avoid building native deps on 3.13:
+   - `runtime.txt` should contain `python-3.11` (preferred by Streamlit Cloud)
+   - `.python-version` should contain `3.11` (helps some builders pick the right version)
+   - After pushing these files, open the app settings in Streamlit Cloud → Advanced → Clear cache, then Redeploy so the new Python is used.
