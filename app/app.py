@@ -210,7 +210,7 @@ def main():
                         st.error(f"HTML fallback failed: {e2}")
         
         # City rankings
-        st.header("Top Cities by Charging Score")
+        st.header("Top Cities for charging stations")
         
         # Filter data
         if selected_county and selected_county != "All Counties":
